@@ -1,0 +1,56 @@
+version: 2.1
+
+executors:
+  python-executor:
+    docker:
+      - image: cimg/python:3.12
+
+jobs:
+  run_unit_tests:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Set PYTHONPATH
+          command: echo 'export PYTHONPATH=$PYTHONPATH:/home/circleci/project' >> $BASH_ENV
+      - run:
+          name: Install Dependencies and Run Unit Tests
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            pytest --maxfail=5 --disable-warnings
+
+  create_env_and_run_bot:
+    executor: python-executor
+    steps:
+      - checkout
+      - run:
+          name: Set PYTHONPATH
+          command: echo 'export PYTHONPATH=$PYTHONPATH:/home/circleci/project' >> $BASH_ENV
+      - run:
+          name: Create .env file
+          command: |
+            echo "TOKEN=${TOKEN}" > .env
+            echo "ADMIN_ID=${ADMIN_ID}" >> .env
+          when: always
+      - run:
+          name: Setup Environment and Run Bot
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            python main/bot.py
+          no_output_timeout: 15m
+
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - run_unit_tests
+      - create_env_and_run_bot:
+          requires:
+            - run_unit_tests
