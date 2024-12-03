@@ -29,3 +29,4 @@ def test_handler_factory_invalid_type():
     helper = CommandHandlerFactory()
     guest_handler = helper.get_handler("invalid_type")
     assert isinstance(guest_handler, GuestHandler)
+
